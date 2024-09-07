@@ -14,9 +14,6 @@ int main(int argc, char **argv)
   std::cout << std::unitbuf;
   std::cerr << std::unitbuf;
 
-  // You can use print statements as follows for debugging, they'll be visible when running tests.
-  std::cout << "Logs from your program will appear here!\n";
-
   int server_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (server_fd < 0)
   {
@@ -25,7 +22,8 @@ int main(int argc, char **argv)
   }
 
   // Since the tester restarts your program quite often, setting SO_REUSEADDR
-  // ensures that we don't run into 'Address already in use' errors
+  // will be be able to use the port once full released
+  // if it is in the TIME_WAIT state
   int reuse = 1;
   if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
   {
@@ -56,8 +54,29 @@ int main(int argc, char **argv)
 
   std::cout << "Waiting for a client to connect...\n";
 
-  accept(server_fd, (struct sockaddr *)&client_addr, (socklen_t *)&client_addr_len);
+  int client = accept(server_fd, (struct sockaddr *)&client_addr, (socklen_t *)&client_addr_len);
   std::cout << "Client connected\n";
+
+  char buffer[1024] = {};
+  ssize_t n = recv(client, buffer, sizeof(buffer) - 1, 0);
+
+  if (n < 0)
+  {
+    std::cerr << "Failed to read from client\n";
+    close(server_fd);
+    return 1;
+  }
+  char response[] = "+PONG\r\n";
+  send(client, response, sizeof(response) - 1, 0);
+
+  ssize_t m = recv(client, buffer, sizeof(buffer) - 1, 0);
+  if (m < 0)
+  {
+    std::cerr << "Failed to read from client\n";
+    close(server_fd);
+    return 1;
+  }
+  send(client, response, sizeof(response) - 1, 0);
 
   close(server_fd);
 
