@@ -54,31 +54,27 @@ int main(int argc, char **argv)
 
   std::cout << "Waiting for a client to connect...\n";
 
-  int client = accept(server_fd, (struct sockaddr *)&client_addr, (socklen_t *)&client_addr_len);
+  int client_fd = accept(server_fd, (struct sockaddr *)&client_addr, (socklen_t *)&client_addr_len);
   std::cout << "Client connected\n";
 
-  char buffer[1024] = {};
-  ssize_t n = recv(client, buffer, sizeof(buffer) - 1, 0);
-
-  if (n < 0)
-  {
-    std::cerr << "Failed to read from client\n";
-    close(server_fd);
-    return 1;
-  }
   char response[] = "+PONG\r\n";
-  send(client, response, sizeof(response) - 1, 0);
-
-  ssize_t m = recv(client, buffer, sizeof(buffer) - 1, 0);
-  if (m < 0)
+  char buffer[1024] = {};
+  ssize_t res;
+  while (true)
   {
-    std::cerr << "Failed to read from client\n";
-    close(server_fd);
-    return 1;
+    memset(buffer, 0, sizeof(buffer));
+    res = read(client_fd, buffer, sizeof(buffer));
+    if (res <= 0)
+    {
+      if (res < 0)
+        std::cerr << "Failed to read from client\n";
+      close(client_fd);
+      close(server_fd);
+      return res == 0 ? 0 : 1;
+    }
+    // -1 from sizeof to remove the null terminator
+    send(client_fd, response, sizeof(response) - 1, 0);
   }
-  send(client, response, sizeof(response) - 1, 0);
-
-  close(server_fd);
 
   return 0;
 }
