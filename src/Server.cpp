@@ -62,7 +62,7 @@ int main(int argc, char **argv)
   ssize_t res;
   while (true)
   {
-    memset(buffer, 0, sizeof(buffer));
+    memset(buffer, '\0', sizeof(buffer));
     res = read(client_fd, buffer, sizeof(buffer));
     if (res <= 0)
     {
