@@ -7,73 +7,49 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <asio.hpp>
+
+using asio::ip::tcp;
 
 int main(int argc, char **argv)
 {
-  // outputs buffer immediately
-  std::cout << std::unitbuf;
-  std::cerr << std::unitbuf;
-
-  int server_fd = socket(AF_INET, SOCK_STREAM, 0);
-  if (server_fd < 0)
+  try
   {
-    std::cerr << "Failed to create server socket\n";
-    return 1;
-  }
+    asio::io_context io_context;
 
-  // Since the tester restarts your program quite often, setting SO_REUSEADDR
-  // will be be able to use the port once full released
-  // if it is in the TIME_WAIT state
-  int reuse = 1;
-  if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
-  {
-    std::cerr << "setsockopt failed\n";
-    return 1;
-  }
+    tcp::acceptor acceptor(io_context, tcp::endpoint(tcp::v4(), 6379));
 
-  struct sockaddr_in server_addr;
-  server_addr.sin_family = AF_INET;
-  server_addr.sin_addr.s_addr = INADDR_ANY;
-  server_addr.sin_port = htons(6379);
+    tcp::socket socket(io_context);
+    acceptor.accept(socket);
 
-  if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) != 0)
-  {
-    std::cerr << "Failed to bind to port 6379\n";
-    return 1;
-  }
+    char res[] = "+PONG\r\n";
+    char req[1024];
+    asio::error_code error;
 
-  int connection_backlog = 5;
-  if (listen(server_fd, connection_backlog) != 0)
-  {
-    std::cerr << "listen failed\n";
-    return 1;
-  }
-
-  struct sockaddr_in client_addr;
-  int client_addr_len = sizeof(client_addr);
-
-  std::cout << "Waiting for a client to connect...\n";
-
-  int client_fd = accept(server_fd, (struct sockaddr *)&client_addr, (socklen_t *)&client_addr_len);
-  std::cout << "Client connected\n";
-
-  char response[] = "+PONG\r\n";
-  char buffer[1024] = {};
-  ssize_t res;
-  while (true)
-  {
-    memset(buffer, '\0', sizeof(buffer));
-    res = read(client_fd, buffer, sizeof(buffer));
-    if (res <= 0)
+    while (true)
     {
-      if (res < 0)
-        std::cerr << "Failed to read from client\n";
-      close(client_fd);
-      close(server_fd);
-      return res == 0 ? 0 : 1;
+      memset(req, 0, sizeof(req));
+      size_t length = socket.read_some(asio::buffer(req), error);
+
+      if (error == asio::error::eof)
+      {
+        // Connection closed cleanly by the peer
+        return -1;
+      }
+      else if (error)
+      {
+        // Some other error occurred
+        throw asio::system_error(error);
+        return -1;
+      }
+
+      // Echo the received data back to the client
+      asio::write(socket, asio::buffer(res, sizeof(res) - 1));
     }
-    // -1 from sizeof to remove the null terminator
-    send(client_fd, response, sizeof(response) - 1, 0);
+  }
+  catch (std::exception &e)
+  {
+    std::cerr << e.what() << std::endl;
   }
 
   return 0;
