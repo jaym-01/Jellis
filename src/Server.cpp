@@ -11,7 +11,9 @@
 // #include <arpa/inet.h>
 // #include <netdb.h>
 #include <asio.hpp>
+#include "headers/RedisFuncs.hpp"
 #include "headers/MessageParsing.hpp"
+#include "headers/Debugging.hpp"
 
 #define PORT 6379
 
@@ -55,7 +57,7 @@ private:
   {
     std::cout << "Connection " << connection_id_ << std::endl;
     std::cout << "Received: " << message_ << ", " << bytes_transferred << std::endl;
-    std::string response = "+PONG\r\n";
+    std::string response = redis::process_input(message_);
 
     if (error == asio::error::eof)
     {
@@ -69,8 +71,15 @@ private:
       return;
     }
 
-    asio::async_write(socket_, asio::buffer(response), std::bind(&tcp_connection::handle_write, shared_from_this(), asio::placeholders::error, asio::placeholders::bytes_transferred));
-    std::cout << "Sent: " << response << std::endl;
+    if (response != "")
+    {
+      asio::async_write(socket_, asio::buffer(response), std::bind(&tcp_connection::handle_write, shared_from_this(), asio::placeholders::error, asio::placeholders::bytes_transferred));
+      std::cout << "Sent: " << response << std::endl;
+    }
+    else
+    {
+      start();
+    }
   }
 
   void handle_write(const std::error_code &error, size_t bytes_transferred)
@@ -131,16 +140,9 @@ int main(int argc, char **argv)
 {
   try
   {
-    // asio::io_context io_context;
-    // tcp_server server(io_context);
-    // io_context.run();
-
-    auto result = msg_parsing::parse_resp("*2\r\n$5\r\nhello\r\n$5\r\nworld\r\n");
-
-    for (const std::string val : result)
-    {
-      std::cout << val << std::endl;
-    }
+    asio::io_context io_context;
+    tcp_server server(io_context);
+    io_context.run();
   }
   catch (std::exception &e)
   {

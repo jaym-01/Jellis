@@ -23,7 +23,7 @@ namespace msg_parsing
     throw std::runtime_error("Invalid RESP message passed into extract_next_msg");
   }
 
-  std::vector<std::string> parse_resp_helper(std::string::iterator &current, std::string::iterator end)
+  std::vector<std::string> parse_resp_helper(std::string::iterator &current, const std::string::iterator end)
   {
     switch (*current)
     {
