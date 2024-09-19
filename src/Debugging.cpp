@@ -12,7 +12,7 @@ namespace debugging
     std::stringstream out;
     for (const char c : s)
     {
-      std::string val(c, 1);
+      std::string val;
       switch (c)
       {
       case '\n':
@@ -21,6 +21,8 @@ namespace debugging
       case '\r':
         val = "\\r";
         break;
+      default:
+        val = c;
       }
       out << val;
     }

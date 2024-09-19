@@ -30,7 +30,6 @@ namespace redis
         std::string delim = "\r\n";
         std::stringstream out;
         out << "$" << val.length() << delim << val << delim;
-        std::cout << "test: " << out.str() << std::endl;
         return out.str();
       }
       else

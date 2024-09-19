@@ -56,7 +56,7 @@ private:
   void handle_read(const std::error_code &error, size_t bytes_transferred)
   {
     std::cout << "Connection " << connection_id_ << std::endl;
-    std::cout << "Received: " << message_ << ", " << bytes_transferred << std::endl;
+    std::cout << "Received: " << debugging::convert_to_raw_string(message_) << ", " << bytes_transferred << std::endl;
     std::string response = redis::process_input(message_);
 
     if (error == asio::error::eof)
@@ -74,7 +74,7 @@ private:
     if (response != "")
     {
       asio::async_write(socket_, asio::buffer(response), std::bind(&tcp_connection::handle_write, shared_from_this(), asio::placeholders::error, asio::placeholders::bytes_transferred));
-      std::cout << "Sent: " << response << std::endl;
+      std::cout << "Sent: " << debugging::convert_to_raw_string(response) << std::endl;
     }
     else
     {
