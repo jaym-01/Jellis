@@ -3,10 +3,13 @@
 
 #include <string>
 #include <vector>
+#include "RedisFuncs.hpp"
 
 namespace msg_parsing
 {
-  std::vector<std::string> parse_resp(std::string msg);
+  redis::data parse_resp(std::string msg);
+
+  std::string process_input(std::string input);
 }
 
 #endif

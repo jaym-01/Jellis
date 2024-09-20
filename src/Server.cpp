@@ -2,16 +2,8 @@
 #define SERVER_CPP
 
 #include <iostream>
-// #include <cstdlib>
 #include <string>
-// #include <cstring>
-// #include <unistd.h>
-// #include <sys/types.h>
-// #include <sys/socket.h>
-// #include <arpa/inet.h>
-// #include <netdb.h>
 #include <asio.hpp>
-#include "headers/RedisFuncs.hpp"
 #include "headers/MessageParsing.hpp"
 #include "headers/Debugging.hpp"
 
@@ -50,31 +42,28 @@ private:
   tcp_connection(asio::io_context &io_context, int connection_id) : socket_(io_context), connection_id_(connection_id)
   {
     message_.resize(buffer_size_, '\0');
-    std::cout << "Connection started with " << connection_id << std::endl;
   }
 
   void handle_read(const std::error_code &error, size_t bytes_transferred)
   {
-    std::cout << "Connection " << connection_id_ << std::endl;
-    std::cout << "Received: " << debugging::convert_to_raw_string(message_) << ", " << bytes_transferred << std::endl;
-    std::string response = redis::process_input(message_);
-
+    // Check if connection has been closed
     if (error == asio::error::eof)
-    {
-      // Connection closed cleanly by the peer
       return;
-    }
     else if (error)
     {
-      // Some other error occurred
+      // An error has occurred
       throw asio::system_error(error);
       return;
     }
 
-    if (response != "")
+    std::cout << "Connection " << connection_id_ << std::endl;
+    std::cout << "Received: " << debugging::convert_to_raw_string(message_) << ", " << bytes_transferred << std::endl;
+    if (bytes_transferred > 0 && message_ != "")
     {
+      std::string response = msg_parsing::process_input(message_);
       asio::async_write(socket_, asio::buffer(response), std::bind(&tcp_connection::handle_write, shared_from_this(), asio::placeholders::error, asio::placeholders::bytes_transferred));
-      std::cout << "Sent: " << debugging::convert_to_raw_string(response) << std::endl;
+      std::cout << "Sent: " << debugging::convert_to_raw_string(response) << "\n\n"
+                << std::endl;
     }
     else
     {
@@ -84,9 +73,12 @@ private:
 
   void handle_write(const std::error_code &error, size_t bytes_transferred)
   {
-    if (error)
+    // Check if connection has been closed
+    if (error == asio::error::eof)
+      return;
+    else if (error)
     {
-      // Some other error occurred
+      // An error has occurred
       throw asio::system_error(error);
       return;
     }
@@ -146,6 +138,7 @@ int main(int argc, char **argv)
   }
   catch (std::exception &e)
   {
+    std::cout << "here" << std::endl;
     std::cerr << e.what() << std::endl;
   }
 
