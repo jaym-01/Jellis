@@ -1,9 +1,11 @@
-#ifndef REDIS_FUNCS_HPP
-#define REDIS_FUNCS_HPP
+#ifndef REDIS_TYPES_HPP
+#define REDIS_TYPES_HPP
 
 #include <string>
+#include <vector>
 #include <unordered_map>
 #include <stdexcept>
+
 namespace redis
 {
   enum data_type
@@ -25,7 +27,8 @@ namespace redis
 
     data() : type_(NULL_TYPE) {};
 
-    std::string get_val()
+    // used to get the value for a non array type
+    const std::string get_val()
     {
       if (type_ == ARRAY_ELEMENT)
         throw std::runtime_error("Invalid Operation: tried to fetch a single value from an array.");
@@ -33,16 +36,9 @@ namespace redis
       return value_;
     }
 
-    // TODO: make this recursively the the values of arguements
-    std::string get_val(int index)
+    data &operator[](int i)
     {
-      if (type_ != ARRAY_ELEMENT)
-        throw std::runtime_error("Invalid Operation: tried to fetch value at index on a type that is not an array.");
-      else if (index < -1 && index >= array_values_.size())
-      {
-        throw std::runtime_error("Invalid Arguement: index provided for the array is out of bounds");
-      }
-      return array_values_[index].get_val();
+      return array_values_[i];
     }
 
     data_type get_type() { return type_; }
@@ -56,12 +52,12 @@ namespace redis
     }
 
   private:
-    std::vector<data> array_values_;
+    std::vector<redis::data> array_values_;
     std::string value_;
     data_type type_;
   };
 
-  // std::unordered_map<std::string, data> db;
+  extern std::unordered_map<std::string, data> db;
 }
 
 #endif

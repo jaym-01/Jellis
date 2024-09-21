@@ -2,7 +2,6 @@
 #define DEBUGGING_CPP
 
 #include "headers/Debugging.hpp"
-#include <string>
 #include <sstream>
 
 namespace debugging

@@ -2,7 +2,7 @@
 #define MESSAGEPARSING_CPP
 
 #include "headers/MessageParsing.hpp"
-#include "headers/RedisFuncs.hpp"
+#include "headers/RedisTypes.hpp"
 #include <stdexcept>
 #include <sstream>
 #include <iostream>
@@ -88,24 +88,44 @@ namespace msg_parsing
 
   std::string process_input(std::string input)
   {
+    const std::string delim = "\r\n";
     redis::data parsed_input = parse_resp(input);
 
     std::string command;
 
-    for (const char c : parsed_input.get_val(0))
+    for (const char c : parsed_input[0].get_val())
       command.push_back(tolower(c));
 
     if (command == "echo")
     {
-      std::string val = parsed_input.get_val(1);
-      std::string delim = "\r\n";
+      std::string val = parsed_input[1].get_val();
       std::stringstream out;
       out << "$" << val.length() << delim << val << delim;
       return out.str();
     }
     else if (command == "set")
     {
-      return "";
+      std::string key = parsed_input[1].get_val();
+      redis::data val = parsed_input[2];
+
+      redis::db[key] = val;
+
+      return "+OK\r\n";
+    }
+    else if (command == "get")
+    {
+      std::string key = parsed_input[1].get_val();
+      std::unordered_map<std::string, redis::data>::iterator val = redis::db.find(key);
+
+      if (val == redis::db.end())
+        return "$-1\r\n";
+      else
+      {
+        std::string str_val = val->second.get_val();
+        std::stringstream out;
+        out << "$" << str_val.length() << delim << str_val << delim;
+        return out.str();
+      }
     }
     else
     {

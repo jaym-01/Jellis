@@ -1,9 +1,9 @@
-#ifndef MESSAGEPARSING_HPP
-#define MESSAGEPARSING_HPP
+#ifndef MESSAGE_PARSING_HPP
+#define MESSAGE_PARSING_HPP
 
 #include <string>
 #include <vector>
-#include "RedisFuncs.hpp"
+#include "RedisTypes.hpp"
 
 namespace msg_parsing
 {

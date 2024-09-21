@@ -138,7 +138,6 @@ int main(int argc, char **argv)
   }
   catch (std::exception &e)
   {
-    std::cout << "here" << std::endl;
     std::cerr << e.what() << std::endl;
   }
 
