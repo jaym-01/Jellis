@@ -86,18 +86,28 @@ namespace msg_parsing
     return parse_resp_helper(cur, msg.end());
   }
 
+  std::string to_lowercase(std::string s)
+  {
+    std::string out;
+    for (const char c : s)
+      out.push_back(tolower(c));
+    return out;
+  }
+
   std::string process_input(std::string input)
   {
+    // parse input
     const std::string delim = "\r\n";
     redis::data parsed_input = parse_resp(input);
 
-    std::string command;
+    std::string command = to_lowercase(parsed_input[0].get_val());
 
-    for (const char c : parsed_input[0].get_val())
-      command.push_back(tolower(c));
-
+    // execute commands
     if (command == "echo")
     {
+      if (parsed_input.size() != 2)
+        throw std::runtime_error("Invalid ECHO command: invalid number of arguments");
+
       std::string val = parsed_input[1].get_val();
       std::stringstream out;
       out << "$" << val.length() << delim << val << delim;
@@ -105,26 +115,47 @@ namespace msg_parsing
     }
     else if (command == "set")
     {
+      std::unordered_map<std::string, std::string> args = {
+          {"px", "-1"}};
+
+      if (parsed_input.size() < 3)
+        throw std::runtime_error("Invalid SET command: invalid number of arguments.");
       std::string key = parsed_input[1].get_val();
       redis::data val = parsed_input[2];
 
-      redis::db[key] = val;
+      for (int i = 3; i < parsed_input.size(); i++)
+      {
+        if (to_lowercase(parsed_input[i].get_val()) == "px")
+        {
+          args["px"] = parsed_input[++i].get_val();
+          std::cout << "px: " << parsed_input[++i].get_val() << std::endl;
+        }
+      }
+
+      redis::db[key] = redis::data_store(val, std::stoi(args["px"]));
 
       return "+OK\r\n";
     }
     else if (command == "get")
     {
+      if (parsed_input.size() != 2)
+        throw std::runtime_error("Invalid GET command: invalid number of arguments");
+
       std::string key = parsed_input[1].get_val();
-      std::unordered_map<std::string, redis::data>::iterator val = redis::db.find(key);
+      std::unordered_map<std::string, redis::data_store>::iterator val = redis::db.find(key);
 
       if (val == redis::db.end())
         return "$-1\r\n";
       else
       {
-        std::string str_val = val->second.get_val();
-        std::stringstream out;
-        out << "$" << str_val.length() << delim << str_val << delim;
-        return out.str();
+        redis::data_store data_item = val->second;
+        if (!data_item.is_item_expired())
+        {
+          std::string str_val = data_item.get_value().get_val();
+          std::stringstream out;
+          out << "$" << str_val.length() << delim << str_val << delim;
+          return out.str();
+        }
       }
     }
     else

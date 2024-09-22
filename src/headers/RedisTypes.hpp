@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include <stdexcept>
+#include <chrono>
 
 namespace redis
 {
@@ -38,6 +39,8 @@ namespace redis
 
     data &operator[](int i)
     {
+      if (type_ != ARRAY_ELEMENT)
+        throw std::runtime_error("Invalid operation: used the '[]' operator on a non array type.");
       return array_values_[i];
     }
 
@@ -57,7 +60,47 @@ namespace redis
     data_type type_;
   };
 
-  extern std::unordered_map<std::string, data> db;
+  class data_store
+  {
+  public:
+    data_store(data &value) : value_(value) {}
+
+    data_store(data &value, int exp_in) : value_(value)
+    {
+      expiry_time_ = get_current_t_ms() + exp_in;
+    }
+
+    bool is_item_expired()
+    {
+      if (expiry_time_ == -1)
+        return false;
+      else
+        return get_current_t_ms() > expiry_time_;
+    }
+
+    data get_value()
+    {
+      if (is_item_expired())
+        throw std::runtime_error("Did not check if the item has expired.");
+      else
+      {
+        return value_;
+      }
+    }
+
+  private:
+    long long get_current_t_ms()
+    {
+      std::chrono::_V2::system_clock::time_point now = std::chrono::system_clock::now();
+      return std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+    }
+
+    data value_;
+    long long expiry_time_ = -1;
+  };
+
+  extern std::unordered_map<std::string, data_store>
+      db;
 }
 
 #endif
