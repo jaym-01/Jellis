@@ -63,11 +63,12 @@ namespace redis
   class data_store
   {
   public:
-    data_store(data &value) : value_(value) {}
+    data_store() {}
 
-    data_store(data &value, int exp_in) : value_(value)
+    data_store(data value, int exp_in) : value_(value)
     {
-      expiry_time_ = get_current_t_ms() + exp_in;
+      if (exp_in != -1)
+        expiry_time_ = get_current_t_ms() + exp_in;
     }
 
     bool is_item_expired()
