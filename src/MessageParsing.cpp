@@ -98,6 +98,7 @@ namespace msg_parsing
   {
     // parse input
     const std::string delim = "\r\n";
+    const std::string null_msg = "$-1\r\n";
     redis::data parsed_input = parse_resp(input);
     std::string command = to_lowercase(parsed_input[0].get_val());
 
@@ -143,8 +144,13 @@ namespace msg_parsing
       std::string key = parsed_input[1].get_val();
       std::unordered_map<std::string, redis::data_store>::iterator val = redis::db.find(key);
 
-      if (val == redis::db.end() || val->second.is_item_expired())
-        return "$-1\r\n";
+      if (val == redis::db.end())
+        return null_msg;
+      else if (val->second.is_item_expired())
+      {
+        redis::db.erase(val);
+        return null_msg;
+      }
       else
       {
         std::string str_val = val->second.get_value().get_val();
