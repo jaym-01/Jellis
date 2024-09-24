@@ -138,7 +138,12 @@ inline int parse_args(int argc, char **argv)
     {
       std::string value(argv[++i]);
 
-      redis::config[key.substr(2, key.size() - 2)] = redis::data(redis::BULK_STRING, value);
+      std::vector<redis::data> conf = {
+          redis::data(redis::BULK_STRING, key.substr(2, key.size() - 2)),
+          redis::data(redis::BULK_STRING, value),
+      };
+
+      redis::config.push_back(redis::data(redis::ARRAY_ELEMENT, conf));
     }
     else
     {

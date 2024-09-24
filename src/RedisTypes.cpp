@@ -6,7 +6,7 @@
 namespace redis
 {
   std::unordered_map<std::string, redis::data_store> db;
-  std::unordered_map<std::string, redis::data> config;
+  std::vector<redis::data> config;
 }
 
 #endif

@@ -55,7 +55,8 @@ namespace msg_parsing
       else
       {
         current = cur_end + length + 2;
-        return redis::data(redis::BULK_STRING, std::string(cur_end, cur_end + length));
+        std::string out = std::string(cur_end, cur_end + length);
+        return redis::data(redis::BULK_STRING, out);
       }
     }
     case '*':
@@ -156,6 +157,30 @@ namespace msg_parsing
         std::stringstream out;
         out << "$" << str_val.length() << delim << str_val << delim;
         return out.str();
+      }
+    }
+    else if (command == "config")
+    {
+      std::string sub_command = to_lowercase(parsed_input[1].get_val());
+
+      if (sub_command == "get")
+      {
+        std::string key = parsed_input[2].get_val();
+
+        for (redis::data item : redis::config)
+        {
+          std::string cur_key = item[0].get_val();
+          if (cur_key == key)
+          {
+            return item.resp_encode();
+          }
+        }
+
+        return "";
+      }
+      else
+      {
+        throw std::runtime_error("Invalid config command.");
       }
     }
     else

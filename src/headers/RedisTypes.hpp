@@ -25,7 +25,7 @@ namespace redis
   public:
     data(data_type type_data, std::string val) : value_({val}), type_(type_data) {}
 
-    data(data_type type_data, std::vector<data> data) : type_(type_data), array_values_(data) {}
+    data(data_type type_data, const std::vector<data> &data) : type_(type_data), array_values_(data) {}
 
     data() : type_(NULL_TYPE) {};
 
@@ -72,6 +72,7 @@ namespace redis
         return out.str();
       case (BULK_STRING):
         out << "$" << value_.size() << delim << value_ << delim;
+        return out.str();
       case (NULL_TYPE):
         return "$-1\r\n";
       case (ARRAY_ELEMENT):
@@ -100,7 +101,7 @@ namespace redis
   public:
     data_store() {}
 
-    data_store(data value, int exp_in) : value_(value)
+    data_store(data &value, int exp_in) : value_(value)
     {
       if (exp_in != -1)
         expiry_time_ = get_current_t_ms() + exp_in;
@@ -138,7 +139,7 @@ namespace redis
   extern std::unordered_map<std::string, data_store>
       db;
 
-  extern std::unordered_map<std::string, data> config;
+  extern std::vector<data> config;
 }
 
 #endif
