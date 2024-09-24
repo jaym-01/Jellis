@@ -94,7 +94,7 @@ namespace msg_parsing
     return out;
   }
 
-  std::string process_input(std::string input)
+  std::string run_command(std::string input)
   {
     // parse input
     const std::string delim = "\r\n";
@@ -128,7 +128,6 @@ namespace msg_parsing
         if (to_lowercase(parsed_input[i].get_val()) == "px")
         {
           args["px"] = parsed_input[++i].get_val();
-          std::cout << "px: " << parsed_input[++i].get_val() << std::endl;
         }
       }
 
@@ -153,7 +152,7 @@ namespace msg_parsing
       }
       else
       {
-        std::string str_val = val->second.get_value().get_val();
+        std::string str_val = val->second.get_data_stored().get_val();
         std::stringstream out;
         out << "$" << str_val.length() << delim << str_val << delim;
         return out.str();

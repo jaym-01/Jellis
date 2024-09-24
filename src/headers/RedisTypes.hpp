@@ -2,6 +2,7 @@
 #define REDIS_TYPES_HPP
 
 #include <string>
+#include <sstream>
 #include <vector>
 #include <unordered_map>
 #include <stdexcept>
@@ -54,6 +55,40 @@ namespace redis
         return 1;
     }
 
+    std::string resp_encode() const
+    {
+      std::string delim = "\r\n";
+      std::stringstream out;
+      switch (type_)
+      {
+      case (SIMPLE_STRING):
+        out << "+" << value_ << delim;
+        return out.str();
+      case (SIMPLE_ERROR):
+        out << "-" << value_ << delim;
+        return out.str();
+      case (INT):
+        out << ":" << (std::stoi(value_) > 0 ? "+" : (std::stoi(value_) < 0 ? "-" : "")) << value_ << delim;
+        return out.str();
+      case (BULK_STRING):
+        out << "$" << value_.size() << delim << value_ << delim;
+      case (NULL_TYPE):
+        return "$-1\r\n";
+      case (ARRAY_ELEMENT):
+      {
+        out << "*" << array_values_.size() << delim;
+        for (const data element : array_values_)
+        {
+          out << element.resp_encode();
+        }
+
+        return out.str();
+      }
+      default:
+        throw std::runtime_error("Invalid type to encode: " + type_);
+      }
+    }
+
   private:
     std::vector<redis::data> array_values_;
     std::string value_;
@@ -79,7 +114,7 @@ namespace redis
         return get_current_t_ms() > expiry_time_;
     }
 
-    data get_value()
+    data get_data_stored()
     {
       if (is_item_expired())
         throw std::runtime_error("Did not check if the item has expired.");

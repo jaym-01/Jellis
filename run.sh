@@ -8,4 +8,5 @@ set -e # Exit early if any commands fail
   cmake --build ./build
 )
 
+echo "$@"
 exec ./build/server "$@"

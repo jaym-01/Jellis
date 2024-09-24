@@ -60,7 +60,7 @@ private:
     std::cout << "Received: " << debugging::convert_to_raw_string(message_) << ", " << bytes_transferred << std::endl;
     if (bytes_transferred > 0 && message_ != "")
     {
-      std::string response = msg_parsing::process_input(message_);
+      std::string response = msg_parsing::run_command(message_);
       asio::async_write(socket_, asio::buffer(response), std::bind(&tcp_connection::handle_write, shared_from_this(), asio::placeholders::error, asio::placeholders::bytes_transferred));
       std::cout << "Sent: " << debugging::convert_to_raw_string(response) << "\n\n"
                 << std::endl;

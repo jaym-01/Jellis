@@ -9,7 +9,7 @@ namespace msg_parsing
 {
   redis::data parse_resp(std::string msg);
 
-  std::string process_input(std::string input);
+  std::string run_command(std::string input);
 }
 
 #endif
