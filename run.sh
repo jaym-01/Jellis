@@ -8,5 +8,5 @@ set -e # Exit early if any commands fail
   cmake --build ./build
 )
 
-echo "$@"
-exec ./build/server "$@"
+# exec ./build/server "$@"
+exec ./build/server --dir /tmp/redis-files --dbfilename dump.rdb

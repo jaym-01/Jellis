@@ -137,6 +137,8 @@ namespace redis
 
   extern std::unordered_map<std::string, data_store>
       db;
+
+  extern std::unordered_map<std::string, data> config;
 }
 
 #endif

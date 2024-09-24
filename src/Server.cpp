@@ -6,6 +6,7 @@
 #include <asio.hpp>
 #include "headers/MessageParsing.hpp"
 #include "headers/Debugging.hpp"
+#include "headers/RedisTypes.hpp"
 
 #define PORT 6379
 
@@ -128,10 +129,32 @@ private:
   int connection_id;
 };
 
+inline int parse_args(int argc, char **argv)
+{
+  for (int i = 1; i < argc; i++)
+  {
+    std::string key(argv[i]);
+    if (key.size() > 2 && key[0] == '-' && key[1] == '-')
+    {
+      std::string value(argv[++i]);
+
+      redis::config[key.substr(2, key.size() - 2)] = redis::data(redis::BULK_STRING, value);
+    }
+    else
+    {
+      throw std::runtime_error("Invalid arguements.");
+    }
+  }
+
+  return 0;
+}
+
 int main(int argc, char **argv)
 {
   try
   {
+    parse_args(argc, argv);
+
     asio::io_context io_context;
     tcp_server server(io_context);
     io_context.run();
